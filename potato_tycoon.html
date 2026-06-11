@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potato Tycoon Extreme: 50 Cosmic Evolutions</title>
+    <style>
+        :root {
+            --bg-base: #060403;
+            --bg-card: rgba(22, 15, 11, 0.96);
+            --gold-brushed: #b5834a;
+            --gold-glow: #fad296;
+            --potato-cream: #fbf1df;
+            --potato-dark: #241408;
+            --accent-black: #000000;
+            --text-muted: #8e7a6b;
+            --matrix-green: #2ed573;
+            --error-red: #ff4757;
+            --panel-shadow: 0 30px 80px rgba(0, 0, 0, 0.95);
+            --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --transition-snap: transform 0.08s cubic-bezier(0.25, 1, 0.5, 1);
+            --transition-panel: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: #ffffff;
+            font-family: var(--font-stack);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Ambient Faint Particle Canvas Configuration */
+        #particle-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .falling-potato {
+            position: absolute;
+            top: -70px;
+            font-size: 2.5rem;
+            opacity: 0.025; /* Near-invisible, ghost-faded background asset */
+            user-select: none;
+            pointer-events: none;
+            animation: drift-down linear forwards;
+        }
+
+        @keyframes drift-down {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(115vh) rotate(360deg); }
+        }
+
+        /* Main Game Box Frame Structure */
+        .clicker-dashboard {
+            width: 92%;
+            max-width: 440px;
+            background: var(--bg-card);
+            border: 4px solid var(--gold-brushed);
+            border-radius: 28px;
+            padding: 45px 25px;
+            text-align: center;
+            box-shadow: var(--panel-shadow), 0 0 50px rgba(181, 131, 74, 0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 10;
+            position: relative;
+            outline: 1px solid var(--gold-glow);
+            outline-offset: -12px;
+        }
+        .shop-trigger {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            user-select: none;
+            transition: var(--transition-panel);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 50%;
+            border: 1px solid rgba(181, 131, 74, 0.3);
+            line-height: 1;
+            z-index: 15;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .shop-trigger:hover {
+            transform: scale(1.12) rotate(6deg);
+            border-color: var(--gold-glow);
+            background: rgba(181, 131, 74, 0.15);
+        }
+
+        .header-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 3px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .counter-num {
+            font-size: 3.6rem;
+            font-weight: 800;
+            color: var(--potato-cream);
+            line-height: 1.1;
+            margin-bottom: 4px;
+            text-shadow: 2px 4px 0px var(--accent-black);
+            letter-spacing: -1px;
+        }
+
+        .cps-display {
+            font-size: 0.9rem;
+            color: var(--gold-glow);
+            margin-bottom: 25px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .click-zone {
+            margin: 15px auto;
+            width: 170px;
+            height: 170px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .potato-node {
+            background: none;
+            border: none;
+            cursor: pointer;
+            user-select: none;
+            outline: none;
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.7));
+            transition: var(--transition-snap);
+            font-size: 6.5rem;
+        }
+
+        .potato-node:hover { 
+            transform: scale(1.06); 
+        }
+        
+        .potato-node:active { 
+            transform: scale(0.92) rotate(-4deg); 
+        }
+
+        /* Full Screen Overlay Upgrade Shop Structure */
+        .shop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 7, 5, 0.99);
+            border-radius: 24px;
+            z-index: 25;
+            padding: 30px 20px 25px 20px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.96);
+            transition: var(--transition-panel);
+        }
+
+        .shop-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gold-brushed);
+        }
+
+        .shop-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--potato-cream);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .close-btn {
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s ease;
+            padding: 0 4px;
+        }
+        
+        .close-btn:hover { 
+            color: var(--error-red); 
+        }
+
+        .upgrades-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 6px;
+            text-align: left;
+        }
+
+        /* Customized High-End Scrollbar Track */
+        .upgrades-list::-webkit-scrollbar { 
+            width: 4px; 
+        }
+        
+        .upgrades-list::-webkit-scrollbar-thumb { 
+            background: var(--gold-brushed); 
+            border-radius: 10px; 
+        }
+
+        .upgrade-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(181, 131, 74, 0.15);
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .upgrade-item.owned {
+            border-color: var(--matrix-green);
+            background: rgba(46, 213, 115, 0.04);
+        }
+
+        .up-info { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 2px; 
+        }
+        
+        .up-name { 
+            font-size: 0.9rem; 
+            font-weight: 700; 
+            color: var(--potato-cream); 
+        }
+        
+        .up-desc { 
+            font-size: 0.75rem; 
+            color: var(--text-muted); 
+            line-height: 1.2;
+        }
+
+        .buy-btn {
+            background: linear-gradient(135deg, var(--gold-brushed), var(--potato-dark));
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 3px 0 var(--accent-black);
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+
+        .buy-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 var(--accent-black);
+        }
+
+        .buy-btn:disabled {
+            background: #1c1410;
+            color: #4c3d33;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Faint Particles Layer -->
+    <div id="particle-layer"></div>
+    
+    <div class="clicker-dashboard">
+        
+        <!-- Top Right Floating Farm Shop Shortcut Icon -->
+        <div class="shop-trigger" onclick="toggleShop(true)">🏡</div>
+
+        <!-- Metric Header Tracking Labels -->
+        <div class="header-label">Total Potatoes Harvested</div>
+        <div class="counter-num" id="ui-counter">0</div>
+        <div class="cps-display" id="ui-cps">POTATOES PER SECOND: 0</div>
+
+        <!-- Core Tactile Interactive Click Zone -->
+        <div class="click-zone">
+            <button class="potato-node" id="main-btn" onclick="registerClick()">🥔</button>
+        </div>
+
+        <!-- Full-Screen Glassmorphism Upgrade Shop Overlay Matrix -->
+        <div class="shop-overlay" id="shop-panel">
+            <div class="shop-header">
+                <div class="shop-title">🏡 Industrial Farm Shop (50 Upgrades)</div>
+                <button class="close-btn" onclick="toggleShop(false)">✕</button>
+            </div>
+            
+            <!-- Dynamic Scroll Container for Upgrades -->
+            <div class="upgrades-list" id="ui-upgrades-list">
+                <!-- Data items will populate dynamically via the engine script -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Start of Core Engine Execution Logic -->
+    <script>
+        let clickCount = 0;
+        let potatoesPerClick = 1;
+        let potatoesPerSecond = 0;
+
+        const particleCanvas = document.getElementById('particle-layer');
+        const counterElement = document.getElementById('ui-counter');
+        const cpsElement = document.getElementById('ui-cps');
+        const shopPanel = document.getElementById('shop-panel');
+        const UPGRADES = [
+            // ERA 1: THE MANUAL SETTLEMENT (1-10)
+            { id: 0, name: "Wooden Trowel", cost: 15, power: 1, type: "click", icon: "🪵", owned: false },
+            { id: 1, name: "Sharpened Cultivator Stick", cost: 60, power: 3, type: "click", icon: "🥢", owned: false },
+            { id: 2, name: "Rusty Hand Rake", cost: 180, power: 5, type: "click", icon: "🔱", owned: false },
+            { id: 3, name: "Backyard Compost Sump", cost: 450, power: 2, type: "auto", icon: "🧺", owned: false },
+            { id: 4, name: "Forged Iron Hoe", cost: 1200, power: 15, type: "click", icon: "⛏️", owned: false },
+            { id: 5, name: "Heavy Tillage Spade", cost: 3200, power: 30, type: "click", icon: "🫳", owned: false },
+            { id: 6, name: "Autonomous Chicken Network", cost: 7500, power: 12, type: "auto", icon: "🐔", owned: false },
+            { id: 7, name: "Galvanized Watering Pail", cost: 15000, power: 75, type: "click", icon: "💧", owned: false },
+            { id: 8, name: "Woven Silt Sifter Mesh", cost: 28000, power: 120, type: "click", icon: "🕸️", owned: false },
+            { id: 9, name: "Ergonomic Copper Shovel", cost: 50000, power: 200, type: "click", icon: "🥄", owned: false },
+
+            // ERA 2: INDUSTRIAL BOTANY & STEAM POWER (11-20)
+            { id: 10, name: "Enriched Organic Super-Soil", cost: 90000, power: 50, type: "auto", icon: "🟫", owned: false },
+            { id: 11, name: "Gear-Driven Seed Drill", cost: 160000, power: 450, type: "click", icon: "⚙️", owned: false },
+            { id: 12, name: "High-Pressure Cast Sprinkler", cost: 300000, power: 110, type: "auto", icon: "💦", owned: false },
+            { id: 13, name: "Reinforced Steel Wheelbarrow", cost: 550000, power: 900, type: "click", icon: "🛒", owned: false },
+            { id: 14, name: "Steam-Powered Harvester Mech", cost: 990000, power: 320, type: "auto", icon: "🚂", owned: false },
+            { id: 15, name: "Concentrated Phosphate Mist", cost: 1750000, power: 2200, type: "click", icon: "🧪", owned: false },
+            { id: 16, name: "Combustion Engine Trencher", cost: 3200000, power: 850, type: "auto", icon: "🚜", owned: false },
+            { id: 17, name: "Hydraulic Conveyor Sorter Grid", cost: 6500000, power: 5000, type: "click", icon: "🎛️", owned: false },
+            { id: 18, name: "Geodesic Glass Bio-Domes", cost: 12000000, power: 2400, type: "auto", icon: "🏙️", owned: false },
+            { id: 19, name: "Industrial Pneumatic Grader", cost: 22000000, power: 14000, type: "click", icon: "🏭", owned: false },
+
+            // ERA 3: GENETIC CHEMISTRY & LABORATORY ALCHEMY (21-30)
+            { id: 20, name: "Hormonal Root Acceleration Fluid", cost: 45000000, power: 6800, type: "auto", icon: "🧪", owned: false },
+            { id: 21, name: "Bioluminescent Spore Inoculator", cost: 85000000, power: 35000, type: "click", icon: "🍄", owned: false },
+            { id: 22, name: "Photosynthesis Booster Laser", cost: 160000000, power: 18000, type: "auto", icon: "🚨", owned: false },
+            { id: 23, name: "Titanium Alloy Root Shears", cost: 310000000, power: 95000, type: "click", icon: "✂️", owned: false },
+            { id: 24, name: "Autonomous Crop Spray Drone Fleet", cost: 600000000, power: 48000, type: "auto", icon: "🚁", owned: false },
+            { id: 25, name: "Carbon-Nanotube Structural Stakes", cost: 1200000000, power: 250000, type: "click", icon: "🦯", owned: false },
+            { id: 26, name: "Vertical Hydroponic Cyber-Vats", cost: 2500000000, power: 130000, type: "auto", icon: "🔋", owned: false },
+            { id: 27, name: "Nutrient-Rich Volcanic Ash Matrix", cost: 5000000000, power: 680000, type: "click", icon: "🌋", owned: false },
+            { id: 28, name: "Mutated Gamma Radioactive Sprout", cost: 11000000000, power: 420000, type: "auto", icon: "🍀", owned: false },
+            { id: 29, name: "Quantum Starch Molecular Synthesizer", cost: 25000000000, power: 1800000, type: "click", icon: "💎", owned: false },
+
+            // ERA 4: PLANETARY SCALE & HIGH-GRADE COGNITIVE AI (31-40)
+            { id: 30, name: "Orbital Ion Sun-Ray Reflector", cost: 60000000000, power: 1200000, type: "auto", icon: "🛰️", owned: false },
+            { id: 31, name: "Tectonic Crust-Shifting Mega Plow", cost: 140000000000, power: 5500000, type: "click", icon: "🗺️", owned: false },
+            { id: 32, name: "Sub-Zero Cryo Storage Vault Network", cost: 300000000000, power: 4100000, type: "auto", icon: "🥶", owned: false },
+            { id: 33, name: "Atmospheric Cloud Vapor Harvester", cost: 700000000000, power: 18000000, type: "click", icon: "☁️", owned: false },
+            { id: 34, name: "Core Fusion Thermal Sub-Grid", cost: 1500000000000, power: 15000000, type: "auto", icon: "☀️", owned: false },
+            { id: 35, name: "Magma-Chamber Subterranean Drills", cost: 3500000000000, power: 65000000, type: "click", icon: "🌪️", owned: false },
+            { id: 36, name: "Central AI Hivemind Agricultural Bot", cost: 8000000000000, power: 55000000, type: "auto", icon: "🤖", owned: false },
+            { id: 37, name: "High-Mass Tractor Beam Pullers", cost: 18000000000000, power: 250000000, type: "click", icon: "🧲", owned: false },
+            { id: 38, name: "Nanite Swarm Micro-Pollinators", cost: 45000000000000, power: 230000000, type: "auto", icon: "🐝", owned: false },
+            { id: 39, name: "Sub-Atomic Quantum Teleportation Sinks", cost: 99000000000000, power: 1200000000, type: "click", icon: "🌀", owned: false },
+
+            // ERA 5: COSMIC ASCENSION & EXTRA-DIMENSIONAL GLITCHING (41-50)
+            { id: 40, name: "Martian Regolith Extraterrestrial Beds", cost: 250000000000000, power: 950000000, type: "auto", icon: "🔴", owned: false },
+            { id: 41, name: "Hyper-Space Warp Engine Transports", cost: 600000000000000, power: 4500000000, type: "click", icon: "🚀", owned: false },
+            { id: 42, name: "Dyson Swarm Solar Harvest Ring", cost: 1500000000000000, power: 4200000000, type: "auto", icon: "🌌", owned: false },
+            { id: 43, name: "Temporal Relativity Age-Warp Vault", cost: 4000000000000000, power: 20000000000, type: "click", icon: "⏳", owned: false },
+            { id: 44, name: "Artificial Black Hole Density Compressor", cost: 10000000000000000, power: 18000000000, type: "auto", icon: "🕳️", owned: false },
+            { id: 45, name: "Alcubierre Space-Fold Tarp Spreaders", cost: 30000000000000000, power: 95000000000, type: "click", icon: "🛸", owned: false },
+            { id: 46, name: "Reality Glitch Super-Duplicator Core", cost: 90000000000000000, power: 85000000000, type: "auto", icon: "👾", owned: false },
+            { id: 47, name: "Multiverse String-Theory Root Plucker", cost: 350000000000000000, power: 500000000000, type: "click", icon: "🌿", owned: false },
+            { id: 48, name: "Infinite Timeline Matrix Harvester", cost: 1000000000000000000, power: 480000000000, type: "auto", icon: "🌐", owned: false },
+            { id: 49, name: "The Ancient Spud Singularity Paradox", cost: 5000000000000000000, power: 5000000000000, type: "click", icon: "👑", owned: false }
+        ];
+
+        function registerClick() {
+            clickCount += potatoesPerClick;
+            updateDisplay();
+            spawnFadedPotato();
+        }
+
+        function toggleShop(isOpen) {
+            if (isOpen) {
+                shopPanel.classList.add('active');
+                renderShopItems();
+            } else {
+                shopPanel.classList.remove('active');
+            }
+        }
+
+        function renderShopItems() {
+            const container = document.getElementById('ui-upgrades-list');
+            if (!container) return;
+            container.innerHTML = ''; 
+
+            UPGRADES.forEach(item => {
+                const row = document.createElement('div');
+                row.className = `upgrade-item ${item.owned ? 'owned' : ''}`;
+
+                let btnLabel = `${item.cost.toLocaleString()} Clicks`;
+                let btnDisabled = clickCount < item.cost;
+
+                if (item.owned) {
+                    btnLabel = "✓ Owned";
+                    btnDisabled = true;
+                }
+
+                const bonusText = item.type === "click" 
+                    ? `+${item.power.toLocaleString()} /click` 
+                    : `+${item.power.toLocaleString()} /sec (Auto)`;
+
+                row.innerHTML = `
+                    <div class="up-info">
+                        <div class="up-name">${item.icon} ${item.name}</div>
+                        <div class="up-desc">${bonusText}</div>
+                    </div>
+                    <button class="buy-btn" ${btnDisabled ? 'disabled' : ''} onclick="buyUpgrade(${item.id})">
+                        ${btnLabel}
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function buyUpgrade(itemId) {
+            const item = UPGRADES.find(u => u.id === itemId);
+            if (!item || item.owned || clickCount < item.cost) return;
+
+            clickCount -= item.cost;
+            item.owned = true;
+
+            if (item.type === "click") {
+                potatoesPerClick += item.power;
+            } else {
+                potatoesPerSecond += item.power;
+            }
+
+            updateDisplay();
+            renderShopItems();
+        }
+
+        function updateDisplay() {
+            counterElement.innerText = Math.floor(clickCount).toLocaleString();
+            cpsElement.innerText = `POTATOES PER SECOND: ${potatoesPerSecond.toLocaleString()}`;
+        }
+
+        // Automated Processing Ticks (Runs Every 1 Second)
+        setInterval(() => {
+            if (potatoesPerSecond > 0) {
+                clickCount += potatoesPerSecond;
+                updateDisplay();
+                if (Math.random() < 0.25) {
+                    spawnFadedPotato();
+                }
+            }
+        }, 1000);
+
+        function spawnFadedPotato() {
+            if (particleCanvas.children.length > 12) return; // Strict boundary to secure performance
+            const potato = document.createElement('div');
+            potato.className = 'falling-potato';
+            potato.innerText = '🥔';
+            potato.style.left = (Math.random() * 92) + 'vw';
+            potato.style.fontSize = (Math.random() * 1.2 + 1.2) + 'rem';
+            const driftDuration = Math.random() * 4 + 8; // Ultra slow, smooth movement
+            potato.style.animationDuration = driftDuration + 's';
+            particleCanvas.appendChild(potato);
+            setTimeout(() => { potato.remove(); }, driftDuration * 1000);
+        }
+
+        // Initial launch screen paint
+        updateDisplay();
+    </script>
+</body>
+</html>
